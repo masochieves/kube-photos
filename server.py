@@ -23,7 +23,6 @@ if __name__ == "__main__":
 
     try:
         print("Connecting to publisher...")
-        #client.connect("localhost", 30083)
         client.connect("100.88.88.23", 1883)
         client.loop_start()
     except TimeoutError as e:

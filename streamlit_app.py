@@ -6,8 +6,8 @@ import paho.mqtt.client as mqtt
 import time 
 
 # Path to image files
-# os.chdir("/home/chief/kube-photos/")
-os.chdir("C:/D drive/2024 WTH")
+os.chdir("/home/chief/kube-photos/")
+# os.chdir("C:/D drive/2024 WTH")
 
 class GalleryPage():
     def __init__(self, mqtt_client=None):
@@ -26,6 +26,10 @@ class GalleryPage():
         batch_size = 8
         img_dir = "./images/"
         num_batches = ceil(get_total_images()/batch_size)
+        if num_batches == 0: 
+            num_batches = 1
+            no_photos_text = st.empty()
+            no_photos_text.markdown(":red[No images in the folder.]")
         files = os.listdir(img_dir)
 
         # Show current display status
