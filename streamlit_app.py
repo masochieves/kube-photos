@@ -2,18 +2,20 @@ import streamlit as st
 from io import BytesIO
 import os 
 from math import ceil
+import paho.mqtt.client as mqtt
+import time 
 
 # Path to image files
 # os.chdir("/home/chief/kube-photos/")
 os.chdir("C:/D drive/2024 WTH")
 
 class GalleryPage():
-    def __init__(self):
+    def __init__(self, mqtt_client=None):
+        self.mqtt_client = mqtt_client
+
         # States
         self.current_state_text = None
         self.current_img = None
-        self.is_display_mode = True     # false if slideshow, true if selected display
-        self.selected_image = "-"       # path of selected image
         self.page_no = 1                # gallery page
         # self.initialise_page()
 
@@ -63,9 +65,24 @@ class GalleryPage():
         if clicked_button == 0:
             st.session_state['is_display_mode'] = True
             st.session_state['displayed_image'] = st.session_state['selected_image']
+
+            if self.mqtt_client != None and not st.session_state['displayed_image'] == "-":
+                print("Publishing message...")
+                message = "display," + st.session_state['displayed_image']
+                result = self.mqtt_client.publish("updates", message, qos=0)
+                print(f"Publish result: {result}")
+            else:
+                print("No image selected and display mode is 'Display selected'. No message was published.")
+
         # if clicked_button == 1, clicked button is 'slideshow'
         elif clicked_button == 1:
             st.session_state['is_display_mode'] = False
+
+            if self.mqtt_client != None:
+                print("Publishing message...")
+                message = "slideshow,-"
+                result = self.mqtt_client.publish("updates", message, qos=0)
+                print(f"Publish result: {result}")
 
         self.current_state_text.markdown(
             show_str + (f"Displaying {st.session_state['displayed_image']} " if st.session_state['is_display_mode'] else "Slideshow"))
@@ -99,8 +116,7 @@ def get_total_images():
         all_images_len = len(os.listdir("./images/"))
     return all_images_len
 
-
-if __name__ == "__main__":
+def main(mqtt_client=None):
     # Session states
     if 'is_display_mode' not in st.session_state:
         st.session_state['is_display_mode'] = True
@@ -110,6 +126,9 @@ if __name__ == "__main__":
         st.session_state['displayed_image'] = "-"
 
     # Have pages in a navigation bar
-    gallery_page = GalleryPage().initialise_page
+    gallery_page = GalleryPage(mqtt_client).initialise_page
     nav = st.navigation([st.Page(gallery_page, title="Display Image"), st.Page(upload_page, title="Upload Image")])
     nav.run()
+
+if __name__ == "__main__":
+    main()
