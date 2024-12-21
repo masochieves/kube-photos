@@ -4,6 +4,7 @@ import os
 from math import ceil
 import paho.mqtt.client as mqtt
 import time 
+from mqtt_broker import *
 
 # Path to image files
 os.chdir("/home/chief/kube-photos/")
@@ -70,10 +71,11 @@ class GalleryPage():
             st.session_state['is_display_mode'] = True
             st.session_state['displayed_image'] = st.session_state['selected_image']
 
-            if self.mqtt_client != None and not st.session_state['displayed_image'] == "-":
+            client = get_paho_client()
+            if client != None and not st.session_state['displayed_image'] == "-":
                 print("Publishing message...")
                 message = "display," + st.session_state['displayed_image']
-                result = self.mqtt_client.publish("updates", message, qos=0)
+                result = client.publish("updates", message, qos=0)
                 print(f"Publish result: {result}")
             else:
                 print("No image selected and display mode is 'Display selected'. No message was published.")
@@ -82,10 +84,11 @@ class GalleryPage():
         elif clicked_button == 1:
             st.session_state['is_display_mode'] = False
 
-            if self.mqtt_client != None:
+            client = get_paho_client()
+            if client != None:
                 print("Publishing message...")
                 message = "slideshow,-"
-                result = self.mqtt_client.publish("updates", message, qos=0)
+                result = client.publish("updates", message, qos=0)
                 print(f"Publish result: {result}")
 
         self.current_state_text.markdown(
@@ -94,6 +97,38 @@ class GalleryPage():
     def on_click_select_img(self, img_name):
         st.session_state['selected_image'] = img_name
         self.current_img.markdown("Selected image: "+st.session_state['selected_image'])
+
+    
+# The callback for when the client receives a CONNACK response from the server.
+def on_connect(client, userdata, flags, rc, properties=None):
+    if rc != 0:
+        print("Connected with result code " + str(rc))
+
+def on_publish(client, userdata, mid, properties=None, reasonCode=None):
+    print(f"Message published with mid: {mid}")
+
+def get_paho_client():
+    print("Getting MQTT client...")
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5)
+    # The callback for when the client receives a CONNACK response from the server.
+    def on_connect(client, userdata, flags, rc, properties=None):
+        if rc != 0:
+            print("Connected with result code " + str(rc))
+
+    client.on_connect = on_connect
+    client.on_publish = on_publish
+    # set username and password
+    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+
+    try:
+        print("Connecting to publisher...")
+        client.connect(MQTT_HOSTNAME, MQTT_PORT)
+        client.loop_start()
+    except TimeoutError as e:
+        print(traceback.format_exc())
+        client = None
+
+    return client
 
 def upload_page():
     st.title("Upload Images")

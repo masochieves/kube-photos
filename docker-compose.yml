@@ -9,23 +9,10 @@ services:
       - TZ=Etc/UTC
     volumes:
       - ./configs/syncthing:/config
-      - ./images:/images
+      - ./images:/config/images
     ports:
       - 8384:8384
       - 22000:22000/tcp
       - 22000:22000/udp
       - 21027:21027/udp
     restart: unless-stopped
-
-  caddy:
-    image: caddy:2.9-alpine
-    restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./configs/caddy:/etc/caddy
-      - ./configs/caddy_data:/data

@@ -1,0 +1,4 @@
+MQTT_USERNAME = "admin-user"
+MQTT_PASSWORD = "admin-password"
+MQTT_HOSTNAME = "100.88.88.23"
+MQTT_PORT = 1883
