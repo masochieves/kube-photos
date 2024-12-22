@@ -1,3 +1,4 @@
 configs/syncthing
 configs/caddy_data
 images/*
+displayvenv/*

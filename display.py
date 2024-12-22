@@ -12,6 +12,7 @@ class PhotoFrame:
         self.current_task = None
         self.loop = asyncio.get_event_loop()
         self.inky = auto()
+        self.mode = "idle"
 
     def display_image(self, img_name):
         saturation = 1.0
@@ -25,32 +26,18 @@ class PhotoFrame:
         self.inky.set_image(image, saturation=saturation)
         self.inky.show()
 
-    def slideshow(self):
-        # TODO
-        all_images = os.listdir("images/")
-        all_images_len = len(all_images)-1
-        image_number = random.randrange(0, all_images_len)
-        self.display_image(all_images[image_number])
+    async def slideshow(self):
+        while self.mode == "slideshow":
+            all_images = os.listdir("images/")
+            all_images_len = len(all_images)
+            image_number = random.randrange(0, all_images_len)
+            self.display_image(all_images[image_number][:-4])  # Remove file extension
+            await asyncio.sleep(80)  # Change image every 5 minutes
 
-    async def display_image_wrapper(self, img_name, mode):
+    async def display_image_wrapper(self, img_name):
         try:
-            if mode == "display":
-            # Cancel previous task if it exists
-                if self.current_task and not self.current_task.done():
-                    self.current_task.cancel()
-                    try:
-                        await self.current_task
-                    except asyncio.CancelledError:
-                        pass
-
-            # Call display_image function
-                self.display_image(img_name)
-            # Sleep for specified time
-                await asyncio.sleep(1)
-            elif mode == "slideshow":
-                if not self.current_task and self.current_task.done():
-                    self.slideshow()
-
+            self.display_image(img_name)
+            await asyncio.sleep(1)
         except asyncio.CancelledError:
             pass
 
@@ -59,14 +46,19 @@ class PhotoFrame:
         print(f"Topic: {msg.topic}")
         print(f"Message: {msg.payload.decode()}")
         
-        # Parse message
         document = msg.payload.decode()
-        array_pic_time = document.split(",")  # Assuming format: "image_number,sleep_time"
-        
-        # Create new task
-        self.current_task = self.loop.create_task(
-            self.display_image_wrapper(array_pic_time, array_pic_time[1])
-        )
+        command, img_name = document.split(",")
+
+        if command == "display":
+            self.mode = "display"
+            if self.current_task:
+                self.current_task.cancel()
+            self.current_task = self.loop.create_task(self.display_image_wrapper(img_name))
+        elif command == "slideshow":
+            self.mode = "slideshow"
+            if self.current_task:
+                self.current_task.cancel()
+            self.current_task = self.loop.create_task(self.slideshow())
 
     def on_connect(self, client, userdata, flags, rc):
         print(f"Connected with result code {rc}")
