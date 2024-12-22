@@ -15,7 +15,7 @@ COPY *.py requirements.txt start.sh /app/
 RUN chmod +x start.sh
 
 RUN groupadd i2c
-RUN usermod -aG i2c $USER
+RUN usermod -a -G i2c $USER
 
 
 # Install dependencies if you have a requirements.txt
