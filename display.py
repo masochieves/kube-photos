@@ -13,35 +13,44 @@ class PhotoFrame:
         self.loop = asyncio.get_event_loop()
         self.inky = auto()
 
-    def display_image(self, details):
-        os.chdir("/home/chief/photo-frame/")
+    def display_image(self, img_name):
         saturation = 1.0
         print(self.inky.resolution)
-        all_images_len = len(os.listdir("./images/"))
-
         try:
-            image = Image.open(f"./images/{details[0]}.jpg")
+            image = Image.open(f"images/{img_name}.jpg")
         except FileNotFoundError:
-            image = Image.open(f"./images/{details[0]}.png")
+            image = Image.open(f"images/{img_name}.png")
         
         image = ImageOps.fit(image, self.inky.resolution)
         self.inky.set_image(image, saturation=saturation)
         self.inky.show()
 
-    async def display_image_wrapper(self, details, sleep_time):
+    def slideshow(self):
+        # TODO
+        all_images = os.listdir("images/")
+        all_images_len = len(all_images)-1
+        image_number = random.randrange(0, all_images_len)
+        self.display_image(all_images[image_number])
+
+    async def display_image_wrapper(self, img_name, mode):
         try:
+            if mode == "display":
             # Cancel previous task if it exists
-            if self.current_task and not self.current_task.done():
-                self.current_task.cancel()
-                try:
-                    await self.current_task
-                except asyncio.CancelledError:
-                    pass
-            
+                if self.current_task and not self.current_task.done():
+                    self.current_task.cancel()
+                    try:
+                        await self.current_task
+                    except asyncio.CancelledError:
+                        pass
+
             # Call display_image function
-            self.display_image(details)
+                self.display_image(img_name)
             # Sleep for specified time
-            await asyncio.sleep(int(sleep_time))
+                await asyncio.sleep(1)
+            elif mode == "slideshow":
+                if not self.current_task and self.current_task.done():
+                    self.slideshow()
+
         except asyncio.CancelledError:
             pass
 
