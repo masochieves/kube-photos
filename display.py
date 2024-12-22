@@ -18,9 +18,11 @@ class PhotoFrame:
         saturation = 1.0
         print(self.inky.resolution)
         try:
-            image = Image.open(f"images/{img_name}.jpg")
+            image = Image.open(f"images/img_name")
         except FileNotFoundError:
-            image = Image.open(f"images/{img_name}.png")
+            print("file not found!")
+            pass
+            #image = Image.open(f"images/{img_name}.png")
         
         image = ImageOps.fit(image, self.inky.resolution)
         self.inky.set_image(image, saturation=saturation)
@@ -36,6 +38,7 @@ class PhotoFrame:
 
     async def display_image_wrapper(self, img_name):
         try:
+            print(f"im here + {img_name} !")
             self.display_image(img_name)
             await asyncio.sleep(1)
         except asyncio.CancelledError:
@@ -48,9 +51,11 @@ class PhotoFrame:
         
         document = msg.payload.decode()
         command, img_name = document.split(",")
+        print(f"command, img name: {command}, {img_name}")
 
         if command == "display":
             self.mode = "display"
+            print("im here one")
             if self.current_task:
                 self.current_task.cancel()
             self.current_task = self.loop.create_task(self.display_image_wrapper(img_name))
@@ -63,7 +68,7 @@ class PhotoFrame:
     def on_connect(self, client, userdata, flags, rc):
         print(f"Connected with result code {rc}")
         print("Subscribing to topic...")
-        client.subscribe("update", qos=0)
+        client.subscribe("updates", qos=0)
         print("Subscribed!")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
