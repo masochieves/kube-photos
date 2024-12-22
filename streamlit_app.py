@@ -14,6 +14,10 @@ class GalleryPage():
     def __init__(self, mqtt_client=None):
         self.mqtt_client = mqtt_client
 
+        self.row_size = 4
+        self.batch_size = 8
+        self.img_dir = "./images/"
+
         # States
         self.current_state_text = None
         self.current_img = None
@@ -23,15 +27,18 @@ class GalleryPage():
     def initialise_page(self):
         st.title("Gallery")
 
-        row_size = 4
-        batch_size = 8
-        img_dir = "./images/"
-        num_batches = ceil(get_total_images()/batch_size)
+        if 'img_ls' not in st.session_state:
+            img_ls = get_all_images()
+            st.session_state['img_ls'] = img_ls
+        else: 
+            img_ls = st.session_state['img_ls']
+    
+        num_batches = ceil(len(img_ls)/self.batch_size)
         if num_batches == 0: 
             num_batches = 1
             no_photos_text = st.empty()
             no_photos_text.markdown(":red[No images in the folder.]")
-        files = os.listdir(img_dir)
+        files = img_ls
 
         # Show current display status
         self.current_state_text = st.empty()
@@ -52,16 +59,23 @@ class GalleryPage():
             self.page_no = st.selectbox("Page", range(1, num_batches+1))
 
         # Show gallery of images
-        batch_imgs = files[(self.page_no-1)*batch_size:self.page_no*batch_size]
+        self.render_photo_grid()
 
-        grid = st.columns(row_size)
+    # @st.fragment
+    def render_photo_grid(self):
+        files = st.session_state['img_ls']
+
+        # Show gallery of images
+        batch_imgs = files[(self.page_no-1)*self.batch_size:self.page_no*self.batch_size]
+
+        grid = st.columns(self.row_size)
         col = 0
 
         for img in batch_imgs:
             with grid[col]:
-                st.image(img_dir+img, caption=img)
+                st.image(self.img_dir+img, caption=img)
                 _ = st.button("Select", key=f"button_{img}", on_click=lambda:self.on_click_select_img(img))
-            col = (col+1) % row_size
+            col = (col+1) % self.row_size
 
     # Button functions
     def on_click_mode_buttons(self, clicked_button):
@@ -76,7 +90,10 @@ class GalleryPage():
                 print("Publishing message...")
                 message = "display," + st.session_state['displayed_image']
                 result = client.publish("updates", message, qos=0)
+                print("Message published: ", message)
                 print(f"Publish result: {result}")
+            elif client is None:
+                print("Could not connect to client.")
             else:
                 print("No image selected and display mode is 'Display selected'. No message was published.")
 
@@ -89,7 +106,10 @@ class GalleryPage():
                 print("Publishing message...")
                 message = "slideshow,-"
                 result = client.publish("updates", message, qos=0)
+                print("Message published: ", message)
                 print(f"Publish result: {result}")
+            else:
+                print("Could not reach MQTT client.")
 
         self.current_state_text.markdown(
             show_str + (f"Displaying {st.session_state['displayed_image']} " if st.session_state['is_display_mode'] else "Slideshow"))
@@ -136,7 +156,8 @@ def upload_page():
 
     # Handle uploaded files
     if uploaded_file is not None:
-        all_images_len = get_total_images()
+        img_ls = get_all_images()
+        all_images_len = len(img_ls)
 
         for image in uploaded_file:
             all_images_len +=1
@@ -144,16 +165,20 @@ def upload_page():
             extension = image.name[-4:]
             if extension[0] != ".":
                 extension = image.name[-5:]
-            with open(f"./images/{all_images_len}{extension}", "wb") as f:
+            with open(f"{self.img_dir}{all_images_len}{extension}", "wb") as f:
                 f.write(image.getbuffer())
 
-def get_total_images():
+def get_all_images(img_dir="./images/"):
+    img_list = []
     try:
-        all_images_len = len(os.listdir("./images/"))
+        for file in os.listdir(img_dir):
+            if file[-4:] in [".jpg", ".png"]:
+                img_list.append(file)
+        all_images_len = len(img_list)
     except FileNotFoundError:
-        os.mkdir("./images/")
-        all_images_len = len(os.listdir("./images/"))
-    return all_images_len
+        os.mkdir(img_dir)
+        all_images_len = len(os.listdir(img_dir))
+    return img_list
 
 def main(mqtt_client=None):
     # Session states
