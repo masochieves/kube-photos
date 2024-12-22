@@ -1,7 +1,5 @@
 :80 {
     reverse_proxy zero1:8501 zero2:8501 {
-        fail_duration 30s
-        max_fails 3
-        unhealthy_status 500
+        lb_policy ip_hash
     }
 }

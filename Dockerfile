@@ -10,12 +10,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all files from current directory to container
-COPY *.py /app/
+COPY *.py requirements.txt start.sh /app/
 
-COPY requirements.txt /app/
+RUN chmod +x start.sh
+
+RUN groupadd i2c
+RUN usermod -aG i2c $USER
+
 
 # Install dependencies if you have a requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Run the Python script
-CMD ["python", "server.py"]
+CMD ["./start.sh"]

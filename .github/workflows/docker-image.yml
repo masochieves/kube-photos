@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - dockerize
   pull_request:
     branches:
       - main
-      - dockerize
   workflow_dispatch:
 
 permissions:

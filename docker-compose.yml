@@ -17,6 +17,20 @@ services:
       - 21027:21027/udp
     restart: unless-stopped
 
+  kube-photos:
+    image: ghcr.io/masochieves/kube-photos:latest
+    container_name: kube-photos
+    restart: unless-stopped
+    volumes:
+      - ./images:/app/images
+    devices:
+      - /dev/i2c-1:/dev/i2c-1
+
+    environment:
+      - "UDEV=1"
+    group_add:
+      - i2c
+
   caddy:
     image: caddy:2.9-alpine
     container_name: caddy

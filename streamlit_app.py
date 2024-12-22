@@ -7,7 +7,7 @@ import time
 from mqtt_broker import *
 
 # Path to image files
-os.chdir("/home/chief/kube-photos/")
+# os.chdir("/home/chief/kube-photos/")
 # os.chdir("C:/D drive/2024 WTH")
 
 class GalleryPage():
