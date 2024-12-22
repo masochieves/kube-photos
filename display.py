@@ -33,7 +33,7 @@ class PhotoFrame:
             all_images = os.listdir("images/")
             all_images_len = len(all_images)
             image_number = random.randrange(0, all_images_len)
-            self.display_image(all_images[image_number][:-4])  # Remove file extension
+            self.display_image(all_images[image_number])  # Remove file extension
             await asyncio.sleep(80)  # Change image every 5 minutes
 
     async def display_image_wrapper(self, img_name):
