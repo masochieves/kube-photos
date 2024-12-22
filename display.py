@@ -18,7 +18,7 @@ class PhotoFrame:
         saturation = 1.0
         print(self.inky.resolution)
         try:
-            image = Image.open(f"images/img_name")
+            image = Image.open(f"images/{img_name}")
         except FileNotFoundError:
             print("file not found!")
             pass
