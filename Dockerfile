@@ -14,10 +14,6 @@ COPY *.py requirements.txt start.sh /app/
 
 RUN chmod +x start.sh
 
-RUN groupadd i2c
-RUN usermod -a -G i2c $USER
-
-
 # Install dependencies if you have a requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
